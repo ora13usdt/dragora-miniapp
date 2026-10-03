@@ -2,582 +2,239 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>DRAGORA</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Inter:wght@400;500;600&display=swap">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root {
-    --bg: #0a0a0f;
-    --card: #13131a;
-    --border: #1e1e2e;
-    --accent: #ff3d3d;
-    --accent2: #ff6b00;
-    --text: #ffffff;
-    --sub: #7b7b9d;
-    --green: #00e676;
-  }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* SCREENS */
-  .screen { display: none; flex-direction: column; align-items: center; padding: 20px; min-height: 100vh; }
-  .screen.active { display: flex; }
-
-  /* HOME */
-  .logo { font-size: 42px; font-weight: 900; letter-spacing: -2px; margin-top: 30px;
-    background: linear-gradient(135deg, #ff3d3d, #ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .tagline { color: var(--sub); font-size: 13px; margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
-
-  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-top: 30px; }
-  .mode-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 20px 14px; cursor: pointer; transition: all 0.2s; text-align: center;
-  }
-  .mode-card:active { transform: scale(0.96); border-color: var(--accent); }
-  .mode-card.selected { border-color: var(--accent); background: rgba(255,61,61,0.1); }
-  .mode-card .icon { font-size: 28px; margin-bottom: 8px; }
-  .mode-card .label { font-size: 14px; font-weight: 700; }
-  .mode-card .sub { font-size: 11px; color: var(--sub); margin-top: 3px; }
-
-  .custom-row { width: 100%; margin-top: 12px; display: none; }
-  .custom-row.show { display: flex; gap: 10px; }
-  .custom-input {
-    flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    color: var(--text); padding: 14px; font-size: 16px; outline: none;
-    transition: border-color 0.2s;
-  }
-  .custom-input:focus { border-color: var(--accent); }
-
-  .big-btn {
-    width: 100%; padding: 18px; border-radius: 16px; border: none; cursor: pointer;
-    font-size: 17px; font-weight: 700; letter-spacing: 0.5px; margin-top: 16px;
-    background: linear-gradient(135deg, #ff3d3d, #ff6b00);
-    color: white; transition: all 0.2s;
-  }
-  .big-btn:active { transform: scale(0.97); opacity: 0.9; }
-  .big-btn:disabled { background: var(--border); color: var(--sub); cursor: not-allowed; transform: none; }
-
-  /* COUNTDOWN */
-  #countdownScreen {
-    justify-content: center; background: var(--bg);
-  }
-  .countdown-ring { position: relative; width: 200px; height: 200px; margin-bottom: 30px; }
-  .countdown-ring svg { width: 200px; height: 200px; transform: rotate(-90deg); }
-  .countdown-ring circle { fill: none; stroke-width: 6; }
-  .ring-bg { stroke: var(--border); }
-  .ring-fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 565; transition: stroke-dashoffset 0.9s linear; }
-  .countdown-num {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 80px; font-weight: 900; color: var(--text);
-  }
-  .countdown-label { font-size: 16px; color: var(--sub); letter-spacing: 3px; text-transform: uppercase; }
-
-  /* MEASURING */
-  #measuringScreen { justify-content: space-between; padding-top: 40px; padding-bottom: 40px; }
-  .speed-display { text-align: center; }
-  .speed-val { font-size: 88px; font-weight: 900; line-height: 1; letter-spacing: -4px;
-    background: linear-gradient(135deg, #ff3d3d, #ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .speed-unit { font-size: 16px; color: var(--sub); letter-spacing: 2px; margin-top: 4px; }
-
-  .progress-ring { position: relative; width: 220px; height: 220px; margin: 20px auto; }
-  .progress-ring svg { width: 220px; height: 220px; transform: rotate(-90deg); }
-  .progress-ring circle { fill: none; stroke-width: 8; }
-  .pr-bg { stroke: var(--border); }
-  .pr-fg { stroke-linecap: round; stroke-dasharray: 628;
-    stroke: url(#grad); transition: stroke-dashoffset 0.3s; }
-  .progress-inner {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    text-align: center;
-  }
-  .progress-time { font-size: 36px; font-weight: 800; }
-  .progress-target { font-size: 12px; color: var(--sub); margin-top: 4px; }
-
-  .splits-row { display: flex; gap: 12px; width: 100%; justify-content: center; flex-wrap: wrap; }
-  .split-badge {
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-    padding: 8px 14px; font-size: 13px; text-align: center;
-  }
-  .split-badge .sv { font-weight: 700; color: var(--accent); }
-
-  .stop-btn {
-    width: 100%; padding: 16px; border-radius: 14px; border: 2px solid var(--accent);
-    background: transparent; color: var(--accent); font-size: 16px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .stop-btn:active { background: rgba(255,61,61,0.15); }
-
-  /* RESULT */
-  #resultScreen { justify-content: flex-start; padding-top: 30px; }
-  .result-header { text-align: center; margin-bottom: 24px; }
-  .result-time { font-size: 72px; font-weight: 900; letter-spacing: -3px;
-    background: linear-gradient(135deg, #ff3d3d, #ff6b00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .result-unit { font-size: 14px; color: var(--sub); }
-
-  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; padding: 16px; margin-bottom: 12px; }
-  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .result-row:last-child { border-bottom: none; }
-  .result-row .rl { color: var(--sub); font-size: 14px; }
-  .result-row .rv { font-weight: 700; font-size: 14px; }
-  .rv.green { color: var(--green); }
-
-  .btn-row { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
-  .btn-sec {
-    flex: 1; padding: 14px; border-radius: 13px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s;
-  }
-  .btn-sec:active { background: var(--border); }
-
-  /* CONDITIONS */
-  .cond-row { display: flex; gap: 10px; width: 100%; margin-bottom: 12px; }
-  .cond-field { flex: 1; }
-  .cond-label { font-size: 11px; color: var(--sub); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
-
-  /* GPS status */
-  .gps-bar { display: flex; align-items: center; gap: 8px; background: var(--card);
-    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; width: 100%; margin-top: 12px; }
-  .gps-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sub); flex-shrink: 0; }
-  .gps-dot.ok { background: var(--green); animation: pulse 1.5s infinite; }
-  .gps-dot.warn { background: #ffa000; }
-  .gps-txt { font-size: 12px; color: var(--sub); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  .section-title { font-size: 11px; color: var(--sub); letter-spacing: 1.5px; text-transform: uppercase;
-    align-self: flex-start; margin-bottom: 10px; margin-top: 20px; }
+:root{--bg:#08080d;--card:#16161f;--border:#22222f;--fg:#f0f0f8;--sub:#6b6b8a;--muted:#3a3a52;--red:#ff2d2d;--orange:#ff6600;--green:#00e676;--amber:#ffa000;--fd:'Barlow Condensed','Arial Narrow',sans-serif;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:Inter,system-ui,sans-serif;font-size:15px;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;overflow:hidden}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;padding:0 16px env(safe-area-inset-bottom,16px);overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .25s}
+.screen.active{opacity:1;pointer-events:auto}
+#homeScreen{padding-top:env(safe-area-inset-top,16px)}
+.logo{font-family:var(--fd);font-size:52px;font-weight:900;letter-spacing:-1px;line-height:1;background:linear-gradient(120deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;padding:20px 0 2px}
+.logo-sub{font-family:var(--fd);font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--sub);margin-bottom:16px}
+.sec{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--sub);margin:16px 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 12px;cursor:pointer;transition:border-color .15s,transform .1s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,45,45,.08),transparent);opacity:0;transition:opacity .2s}
+.card.sel{border-color:var(--red)}.card.sel::before{opacity:1}
+.card:active{transform:scale(.97)}.card.wide{grid-column:1/-1}
+.ci{font-size:22px;margin-bottom:5px}.cl{font-family:var(--fd);font-size:20px;font-weight:700}.cs{font-size:11px;color:var(--sub);margin-top:2px}
+.custom-r{display:none;gap:8px;margin-top:8px}.custom-r.show{display:flex}
+.inp{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--fg);padding:12px;font-size:15px;font-family:inherit;outline:none;transition:border-color .15s;width:100%}
+.inp:focus{border-color:var(--red)}
+.cond{display:flex;gap:8px;margin-top:8px}
+.cond-f{flex:1}.cond-l{font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px}
+.gps-bar{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.dot.ok{background:var(--green);animation:blink 2s ease-in-out infinite}
+.dot.warn{background:var(--amber)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.gps-txt{font-size:12px;color:var(--sub)}
+.btn-main{width:100%;margin-top:14px;margin-bottom:16px;padding:18px;border:none;border-radius:14px;background:linear-gradient(120deg,var(--red),var(--orange));color:#fff;font-family:var(--fd);font-size:22px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .15s,transform .1s;flex-shrink:0}
+.btn-main:active{transform:scale(.98);opacity:.9}
+.btn-main:disabled{background:var(--card);color:var(--muted);border:1px solid var(--border);cursor:not-allowed;transform:none}
+#cdScreen{justify-content:center;align-items:center;gap:24px;background:var(--bg)}
+.cd-ring{position:relative;width:220px;height:220px;flex-shrink:0}
+.cd-ring svg{width:220px;height:220px;transform:rotate(-90deg)}
+.cd-ring circle{fill:none;stroke-width:5}
+.cd-track{stroke:var(--border)}.cd-arc{stroke:var(--red);stroke-linecap:round;stroke-dasharray:628.3;transition:stroke-dashoffset .85s linear}
+.cd-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cd-n{font-family:var(--fd);font-size:100px;font-weight:900;line-height:1}
+.cd-h{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--sub)}
+#measScreen{justify-content:space-between;align-items:center;padding-top:env(safe-area-inset-top,20px);padding-bottom:env(safe-area-inset-bottom,20px)}
+.spd{font-family:var(--fd);font-size:96px;font-weight:900;line-height:1;letter-spacing:-2px;background:linear-gradient(120deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.spd-u{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--sub);text-align:center}
+.pr{position:relative;width:200px;height:200px}
+.pr svg{width:200px;height:200px;transform:rotate(-90deg)}
+.pr circle{fill:none;stroke-width:7}
+.pr-t{stroke:var(--border)}.pr-f{stroke:url(#pg);stroke-linecap:round;stroke-dasharray:565.5;stroke-dashoffset:565.5;transition:stroke-dashoffset .25s ease-out}
+.pr-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pr-time{font-family:var(--fd);font-size:40px;font-weight:700;font-variant-numeric:tabular-nums}
+.pr-lbl{font-size:11px;color:var(--sub);letter-spacing:1px;margin-top:2px;text-align:center}
+.splits{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%}
+.sp{background:var(--card);border:1px solid #2e2e42;border-radius:20px;padding:5px 12px;font-size:12px;display:flex;gap:6px}
+.sp-s{color:var(--sub)}.sp-t{font-weight:600;color:var(--orange)}
+.btn-stop{width:100%;padding:16px;border-radius:13px;border:1.5px solid var(--red);background:transparent;color:var(--red);font-family:var(--fd);font-size:20px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:background .15s}
+.btn-stop:active{background:rgba(255,45,45,.12)}
+#resScreen{padding-top:env(safe-area-inset-top,20px);gap:12px}
+.res-type{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--sub);margin-top:8px}
+.res-hero{text-align:center;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.res-big{font-family:var(--fd);font-size:88px;font-weight:900;line-height:1;letter-spacing:-2px;background:linear-gradient(120deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.res-u{font-size:13px;color:var(--sub);letter-spacing:2px;text-transform:uppercase}
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.rr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:14px}
+.rr:last-child{border-bottom:none}.rrl{color:var(--sub)}.rrv{font-weight:600;font-variant-numeric:tabular-nums}
+.rrv.g{color:var(--green)}.rrv.o{color:var(--orange)}
+.br{display:flex;gap:8px}
+.btn-g{flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--fg);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-g:active{background:var(--border)}
+.btn-s{flex:2;padding:14px;border-radius:12px;border:none;background:linear-gradient(120deg,var(--red),var(--orange));color:#fff;font-family:var(--fd);font-size:19px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:opacity .15s,transform .1s}
+.btn-s:active{transform:scale(.98);opacity:.9}
 </style>
 </head>
 <body>
-
-<!-- HOME -->
 <div class="screen active" id="homeScreen">
   <div class="logo">DRAGORA</div>
-  <div class="tagline">GPS Drag Timer</div>
-
-  <div class="section-title" style="margin-top:28px">Тип замера</div>
-  <div class="mode-grid">
-    <div class="mode-card selected" data-mode="0-100">
-      <div class="icon">⚡</div>
-      <div class="label">0 – 100</div>
-      <div class="sub">км/ч</div>
-    </div>
-    <div class="mode-card" data-mode="0-200">
-      <div class="icon">🚀</div>
-      <div class="label">0 – 200</div>
-      <div class="sub">км/ч</div>
-    </div>
-    <div class="mode-card" data-mode="100-200">
-      <div class="icon">💨</div>
-      <div class="label">100 – 200</div>
-      <div class="sub">км/ч</div>
-    </div>
-    <div class="mode-card" data-mode="quarter_mile">
-      <div class="icon">🏁</div>
-      <div class="label">¼ мили</div>
-      <div class="sub">402 м</div>
-    </div>
-    <div class="mode-card" data-mode="custom" style="grid-column:1/-1">
-      <div class="icon">⚙️</div>
-      <div class="label">Кастомный</div>
-      <div class="sub">своя дистанция</div>
-    </div>
+  <div class="logo-sub">GPS Drag Timer</div>
+  <div class="sec">Тип замера</div>
+  <div class="grid">
+    <div class="card sel" data-m="0-100"><div class="ci">⚡</div><div class="cl">0–100</div><div class="cs">км/ч</div></div>
+    <div class="card" data-m="0-200"><div class="ci">🚀</div><div class="cl">0–200</div><div class="cs">км/ч</div></div>
+    <div class="card" data-m="100-200"><div class="ci">💨</div><div class="cl">100–200</div><div class="cs">км/ч</div></div>
+    <div class="card" data-m="quarter_mile"><div class="ci">🏁</div><div class="cl">¼ мили</div><div class="cs">402 м</div></div>
+    <div class="card wide" data-m="custom"><div class="ci">⚙️</div><div class="cl">Кастом</div><div class="cs">своя дистанция</div></div>
   </div>
-
-  <div class="custom-row" id="customRow">
-    <input class="custom-input" id="customFrom" type="number" placeholder="Старт км/ч" min="0" max="300">
-    <input class="custom-input" id="customTo" type="number" placeholder="Финиш км/ч" min="1" max="400">
+  <div class="custom-r" id="cr">
+    <input class="inp" id="cf" type="number" placeholder="Старт км/ч" min="0" max="300">
+    <input class="inp" id="ct" type="number" placeholder="Финиш км/ч" min="1" max="400">
   </div>
-
-  <div class="section-title">Условия (опционально)</div>
-  <div class="cond-row">
-    <div class="cond-field">
-      <div class="cond-label">🌡 Темп °C</div>
-      <input class="custom-input" id="tempInput" type="number" placeholder="20" style="padding:10px">
-    </div>
-    <div class="cond-field">
-      <div class="cond-label">💨 Ветер м/с</div>
-      <input class="custom-input" id="windInput" type="number" placeholder="0" style="padding:10px">
-    </div>
+  <div class="sec">Условия (опционально)</div>
+  <div class="cond">
+    <div class="cond-f"><div class="cond-l">🌡 Темп °C</div><input class="inp" id="tmp" type="number" placeholder="20"></div>
+    <div class="cond-f"><div class="cond-l">💨 Ветер м/с</div><input class="inp" id="wnd" type="number" placeholder="0"></div>
   </div>
-
-  <div class="gps-bar" id="gpsBar">
-    <div class="gps-dot" id="gpsDot"></div>
-    <div class="gps-txt" id="gpsTxt">Получаем GPS...</div>
-  </div>
-
-  <button class="big-btn" id="startBtn" disabled>🚀 Начать замер</button>
+  <div class="gps-bar"><div class="dot" id="gd"></div><div class="gps-txt" id="gt">Получаем GPS…</div></div>
+  <button class="btn-main" id="startBtn" disabled>🏁 НАЧАТЬ ЗАМЕР</button>
 </div>
 
-<!-- COUNTDOWN -->
-<div class="screen" id="countdownScreen">
-  <div class="countdown-ring">
-    <svg viewBox="0 0 200 200">
-      <circle class="ring-bg" cx="100" cy="100" r="90"/>
-      <circle class="ring-fg" id="cdRing" cx="100" cy="100" r="90"/>
+<div class="screen" id="cdScreen">
+  <div class="cd-ring">
+    <svg viewBox="0 0 200 200"><circle class="cd-track" cx="100" cy="100" r="90"/><circle class="cd-arc" id="cda" cx="100" cy="100" r="90"/></svg>
+    <div class="cd-c"><div class="cd-n" id="cdn">3</div></div>
+  </div>
+  <div class="cd-h" id="cdh">ПРИГОТОВЬСЯ</div>
+</div>
+
+<div class="screen" id="measScreen">
+  <div style="text-align:center;padding-top:10px">
+    <div class="spd" id="sv">0</div><div class="spd-u">КМ/Ч</div>
+  </div>
+  <div class="pr">
+    <svg viewBox="0 0 182 182">
+      <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff2d2d"/><stop offset="100%" stop-color="#ff6600"/></linearGradient></defs>
+      <circle class="pr-t" cx="91" cy="91" r="84"/><circle class="pr-f" id="prf" cx="91" cy="91" r="84"/>
     </svg>
-    <div class="countdown-num" id="cdNum">3</div>
+    <div class="pr-c"><div class="pr-time" id="pt">0.00</div><div class="pr-lbl" id="pl">0→100 км/ч</div></div>
   </div>
-  <div class="countdown-label" id="cdLabel">Приготовься</div>
+  <div class="splits" id="spr"></div>
+  <button class="btn-stop" id="stopBtn">⏹ СТОП</button>
 </div>
 
-<!-- MEASURING -->
-<div class="screen" id="measuringScreen">
-  <div class="speed-display">
-    <div class="speed-val" id="speedVal">0</div>
-    <div class="speed-unit">КМ/Ч</div>
+<div class="screen" id="resScreen">
+  <div class="res-type" id="rt">0 → 100 км/ч</div>
+  <div class="res-hero"><div class="res-big" id="rb">0.00</div><div class="res-u">СЕКУНД</div></div>
+  <div class="res-card" id="rc"></div>
+  <div class="br">
+    <button class="btn-g" id="retryBtn">🔄 Ещё раз</button>
+    <button class="btn-s" id="saveBtn">💾 СОХРАНИТЬ</button>
   </div>
-
-  <div class="progress-ring">
-    <svg viewBox="0 0 220 220">
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:#ff3d3d"/>
-          <stop offset="100%" style="stop-color:#ff6b00"/>
-        </linearGradient>
-      </defs>
-      <circle class="pr-bg" cx="110" cy="110" r="100"/>
-      <circle class="pr-fg" id="progressRing" cx="110" cy="110" r="100"/>
-    </svg>
-    <div class="progress-inner">
-      <div class="progress-time" id="elapsedTime">0.00</div>
-      <div class="progress-target" id="targetLabel">0 → 100 км/ч</div>
-    </div>
-  </div>
-
-  <div class="splits-row" id="splitsRow"></div>
-
-  <button class="stop-btn" id="stopBtn">⏹ Стоп</button>
-</div>
-
-<!-- RESULT -->
-<div class="screen" id="resultScreen">
-  <div class="result-header">
-    <div style="font-size:13px;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px" id="resultType"></div>
-    <div class="result-time" id="resultTime">0.00</div>
-    <div class="result-unit">секунд</div>
-  </div>
-
-  <div class="result-card" id="resultCard"></div>
-
-  <div class="btn-row">
-    <button class="btn-sec" id="retryBtn">🔄 Ещё раз</button>
-    <button class="big-btn" id="saveBtn" style="margin-top:0;flex:1">💾 Сохранить</button>
-  </div>
-  <button class="btn-sec" style="width:100%;margin-top:10px" id="homeBtn">◀️ На главную</button>
+  <button class="btn-g" style="width:100%;margin-top:8px" id="homeBtn">◀️ На главную</button>
 </div>
 
 <script>
-const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
-
-// State
-let selectedMode = '0-100';
-let customFrom = 0, customTo = 100;
-let gpsReady = false;
-let watchId = null;
-let measuring = false;
-let startTime = 0;
-let currentSpeed = 0;
-let maxSpeed = 0;
-let totalDist = 0;
-let lastPos = null;
-let elapsedInterval = null;
-let splits = {};
-let measureResult = null;
-let targetFrom = 0, targetTo = 100;
-let measureDone = false;
-
-// Mode cards
-document.querySelectorAll('.mode-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    selectedMode = card.dataset.mode;
-    const customRow = document.getElementById('customRow');
-    customRow.classList.toggle('show', selectedMode === 'custom');
-    updateTargetLabels();
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#08080d')}catch(e){}}
+let mode='0-100',gpsOk=false,wid=null,measuring=false,t0=0,curS=0,maxS=0,totD=0,lp=null,splits={},stgt=[],tF=0,tT=100,done=false,started=false,result=null,etmr=null;
+const sb=[];
+document.querySelectorAll('.card').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));
+    el.classList.add('sel');mode=el.dataset.m;
+    document.getElementById('cr').classList.toggle('show',mode==='custom');
   });
 });
-
-function getTargetSpeeds() {
-  if (selectedMode === '0-100') return [0, 100];
-  if (selectedMode === '0-200') return [0, 200];
-  if (selectedMode === '100-200') return [100, 200];
-  if (selectedMode === 'quarter_mile') return [0, 999]; // distance-based
-  if (selectedMode === 'custom') {
-    const f = parseFloat(document.getElementById('customFrom').value) || 0;
-    const t = parseFloat(document.getElementById('customTo').value) || 100;
-    return [f, t];
-  }
-  return [0, 100];
+function initGPS(){
+  if(!navigator.geolocation){setGPS(false,'GPS не поддерживается');return}
+  navigator.geolocation.getCurrentPosition(p=>setGPS(true,`GPS готов · ±${Math.round(p.coords.accuracy)}м`),()=>setGPS(false,'Разреши геолокацию'),{enableHighAccuracy:true,timeout:15000});
 }
-
-function getModeLabel() {
-  const labels = { '0-100': '0 → 100 км/ч', '0-200': '0 → 200 км/ч',
-    '100-200': '100 → 200 км/ч', 'quarter_mile': '¼ мили (402 м)', 'custom': 'Кастом' };
-  if (selectedMode === 'custom') {
-    const [f,t] = getTargetSpeeds();
-    return `${f} → ${t} км/ч`;
-  }
-  return labels[selectedMode] || selectedMode;
+function setGPS(ok,msg){
+  gpsOk=ok;const d=document.getElementById('gd');
+  d.className='dot'+(ok?' ok':' warn');
+  document.getElementById('gt').textContent=msg;
+  document.getElementById('startBtn').disabled=!ok;
 }
-
-function updateTargetLabels() {
-  document.getElementById('targetLabel').textContent = getModeLabel();
+initGPS();
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function smooth(v){sb.push(v);if(sb.length>4)sb.shift();return sb.reduce((a,b)=>a+b,0)/sb.length}
+function hav(a,b){const R=6371000,r=Math.PI/180,dL=(b.lat-a.lat)*r,dl=(b.lon-a.lon)*r,x=Math.sin(dL/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dl/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
+function mp(){
+  if(mode==='0-100')return{f:0,t:100,sp:[50],l:'0→100 км/ч'};
+  if(mode==='0-200')return{f:0,t:200,sp:[100],l:'0→200 км/ч'};
+  if(mode==='100-200')return{f:100,t:200,sp:[150],l:'100→200 км/ч'};
+  if(mode==='quarter_mile')return{f:0,t:999,d:402.336,sp:[],l:'¼ мили · 402м'};
+  const f=parseFloat(document.getElementById('cf').value)||0,t=parseFloat(document.getElementById('ct').value)||100;
+  return{f,t,sp:[],l:`${f}→${t} км/ч`};
 }
-
-// GPS
-function startGPS() {
-  if (!navigator.geolocation) {
-    setGPS(false, 'GPS недоступен');
-    return;
-  }
-  const opts = { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 };
-  navigator.geolocation.getCurrentPosition(pos => {
-    setGPS(true, `GPS: ±${Math.round(pos.coords.accuracy)}м`);
-  }, err => {
-    setGPS(false, 'Разреши доступ к геолокации');
-  }, opts);
-}
-
-function setGPS(ok, txt) {
-  gpsReady = ok;
-  const dot = document.getElementById('gpsDot');
-  dot.className = 'gps-dot' + (ok ? ' ok' : ' warn');
-  document.getElementById('gpsTxt').textContent = txt;
-  document.getElementById('startBtn').disabled = !ok;
-}
-
-startGPS();
-
-// Show screen
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-// ── COUNTDOWN ──
-document.getElementById('startBtn').addEventListener('click', () => {
-  [targetFrom, targetTo] = getTargetSpeeds();
-  updateTargetLabels();
-  showScreen('countdownScreen');
-  doCountdown();
+document.getElementById('startBtn').addEventListener('click',()=>{
+  const p=mp();tF=p.f;tT=p.t;stgt=[...p.sp];
+  document.getElementById('pl').textContent=p.l;
+  show('cdScreen');countdown();
 });
-
-function doCountdown() {
-  const nums = ['3', '2', '1', 'GO!'];
-  const ring = document.getElementById('cdRing');
-  const num = document.getElementById('cdNum');
-  const lbl = document.getElementById('cdLabel');
-  const full = 565;
-  let step = 0;
-
-  function tick() {
-    if (step >= nums.length) { startMeasuring(); return; }
-    num.textContent = nums[step];
-    lbl.textContent = step < 3 ? 'Приготовься' : '🏁 ГАЗУЙ!';
-    ring.style.strokeDashoffset = full - (full * (step + 1) / 4);
-    num.style.color = step === 3 ? '#ff3d3d' : 'white';
-    step++;
-    if (step < nums.length) setTimeout(tick, 1000);
-    else setTimeout(() => { startMeasuring(); }, 500);
+function countdown(){
+  const steps=['3','2','1','GO!'],arc=document.getElementById('cda'),num=document.getElementById('cdn'),hint=document.getElementById('cdh');
+  let i=0;arc.style.strokeDashoffset=628.3;arc.style.transition='none';
+  requestAnimationFrame(()=>{arc.style.transition='stroke-dashoffset .85s linear';tick()});
+  function tick(){
+    num.textContent=steps[i];hint.textContent=i<3?'ПРИГОТОВЬСЯ':'ЖМИ!';
+    num.style.color=i===3?'#ff2d2d':'#f0f0f8';
+    arc.style.strokeDashoffset=628.3*(1-(i+1)/4);
+    i++;if(i<steps.length)setTimeout(tick,1000);else setTimeout(startMeas,400);
   }
-  tick();
 }
-
-// ── MEASURING ──
-function haversine(p1, p2) {
-  const R = 6371000, toRad = d => d * Math.PI / 180;
-  const dLat = toRad(p2.lat - p1.lat), dLon = toRad(p2.lon - p1.lon);
-  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(p1.lat))*Math.cos(toRad(p2.lat))*Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function startMeas(){
+  show('measScreen');document.getElementById('spr').innerHTML='';
+  measuring=true;done=false;started=(tF===0);
+  t0=performance.now();curS=0;maxS=0;totD=0;lp=null;splits={};sb.length=0;
+  wid=navigator.geolocation.watchPosition(onPos,()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:5000});
+  etmr=setInterval(()=>{if(!measuring)return;document.getElementById('pt').textContent=((performance.now()-t0)/1000).toFixed(2);},50);
 }
-
-// Simple smoothing buffer
-const speedBuf = [];
-function smoothSpeed(s) {
-  speedBuf.push(s);
-  if (speedBuf.length > 3) speedBuf.shift();
-  return speedBuf.reduce((a,b)=>a+b,0) / speedBuf.length;
+function onPos(pos){
+  if(!measuring)return;
+  const{latitude:lat,longitude:lon,speed}=pos.coords;
+  curS=smooth(speed!=null?speed*3.6:0);if(curS>maxS)maxS=curS;
+  if(lp)totD+=hav(lp,{lat,lon});lp={lat,lon};
+  const el=(performance.now()-t0)/1000;
+  if(!started&&curS>=tF)started=true;
+  if(started)stgt.forEach(sp=>{if(!splits[sp]&&curS>=sp){splits[sp]=el;addSplit(sp,el)}});
+  const p=mp(),dd=p.d?totD>=p.d:false,sd=!p.d&&started&&curS>=tT;
+  if(!done&&(dd||sd)){done=true;finish(el)}
+  document.getElementById('sv').textContent=Math.round(curS);
+  const C=565.5,pct=Math.max(0,Math.min((curS-tF)/(tT-tF)||0,1));
+  document.getElementById('prf').style.strokeDashoffset=C*(1-pct);
 }
-
-function startMeasuring() {
-  showScreen('measuringScreen');
-  document.getElementById('splitsRow').innerHTML = '';
-  measuring = true;
-  measureDone = false;
-  startTime = performance.now();
-  maxSpeed = 0; totalDist = 0; lastPos = null;
-  splits = {};
-  speedBuf.length = 0;
-
-  const splitTargets = selectedMode === '0-200' ? [50, 100] :
-                       selectedMode === '100-200' ? [150] : [];
-
-  const opts = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
-  watchId = navigator.geolocation.watchPosition(pos => {
-    if (!measuring) return;
-    const { latitude: lat, longitude: lon, speed, accuracy } = pos.coords;
-    const rawKmh = speed != null ? speed * 3.6 : 0;
-    currentSpeed = smoothSpeed(rawKmh);
-    if (currentSpeed > maxSpeed) maxSpeed = currentSpeed;
-
-    if (lastPos) totalDist += haversine(lastPos, { lat, lon });
-    lastPos = { lat, lon };
-
-    const elapsed = (performance.now() - startTime) / 1000;
-
-    // Check splits
-    splitTargets.forEach(sp => {
-      if (!splits[sp] && currentSpeed >= sp) {
-        splits[sp] = elapsed;
-        addSplitBadge(sp, elapsed);
-      }
-    });
-
-    // Check finish condition
-    if (!measureDone) {
-      const done = selectedMode === 'quarter_mile'
-        ? totalDist >= 402.336
-        : currentSpeed >= targetTo && (targetFrom === 0 || currentSpeed >= targetFrom);
-
-      // For 100-200 and custom, also check start speed reached
-      const started = targetFrom === 0 || currentSpeed >= targetFrom;
-
-      if (done && started) {
-        measureDone = true;
-        finishMeasuring(elapsed);
-      }
-    }
-
-    updateMeasuringUI(elapsed);
-  }, err => {
-    console.warn('GPS error', err);
-  }, opts);
-
-  // UI timer
-  elapsedInterval = setInterval(() => {
-    if (!measuring) return;
-    const el = (performance.now() - startTime) / 1000;
-    document.getElementById('elapsedTime').textContent = el.toFixed(2);
-  }, 50);
-}
-
-function addSplitBadge(sp, t) {
-  const row = document.getElementById('splitsRow');
-  const b = document.createElement('div');
-  b.className = 'split-badge';
-  b.innerHTML = `<div style="color:var(--sub);font-size:11px">${sp} км/ч</div><div class="sv">${t.toFixed(2)}с</div>`;
-  row.appendChild(b);
-}
-
-function updateMeasuringUI(elapsed) {
-  document.getElementById('speedVal').textContent = Math.round(currentSpeed);
-
-  const ring = document.getElementById('progressRing');
-  let pct = 0;
-  if (selectedMode === 'quarter_mile') pct = Math.min(totalDist / 402.336, 1);
-  else {
-    const range = targetTo - targetFrom;
-    pct = range > 0 ? Math.min((currentSpeed - targetFrom) / range, 1) : 0;
-    if (pct < 0) pct = 0;
-  }
-  ring.style.strokeDashoffset = 628 * (1 - pct);
-}
-
-function finishMeasuring(elapsed) {
-  stopMeasuring();
-  measureResult = {
-    type: selectedMode,
-    time: elapsed,
-    top_speed: maxSpeed,
-    distance: totalDist,
-    temperature: parseFloat(document.getElementById('tempInput').value) || 0,
-    wind: parseFloat(document.getElementById('windInput').value) || 0,
-    splits
-  };
-  showResult(measureResult);
-}
-
-function stopMeasuring() {
-  measuring = false;
-  if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-  clearInterval(elapsedInterval);
-}
-
-document.getElementById('stopBtn').addEventListener('click', () => {
-  const elapsed = (performance.now() - startTime) / 1000;
-  stopMeasuring();
-  if (elapsed > 0.5) {
-    measureResult = {
-      type: selectedMode, time: elapsed, top_speed: maxSpeed,
-      distance: totalDist,
-      temperature: parseFloat(document.getElementById('tempInput').value) || 0,
-      wind: parseFloat(document.getElementById('windInput').value) || 0,
-      splits
-    };
-    showResult(measureResult);
-  } else {
-    showScreen('homeScreen');
-  }
+function addSplit(sp,t){const r=document.getElementById('spr'),el=document.createElement('div');el.className='sp';el.innerHTML=`<span class="sp-s">${sp}км/ч</span><span class="sp-t">${t.toFixed(2)}с</span>`;r.appendChild(el)}
+function stopW(){measuring=false;clearInterval(etmr);if(wid!=null){navigator.geolocation.clearWatch(wid);wid=null}}
+function finish(el){stopW();result={type:mode,time:el,top_speed:maxS,distance:totD,temperature:parseFloat(document.getElementById('tmp').value)||0,wind:parseFloat(document.getElementById('wnd').value)||0,splits};showRes()}
+document.getElementById('stopBtn').addEventListener('click',()=>{
+  const el=(performance.now()-t0)/1000;stopW();
+  if(el>0.5){result={type:mode,time:el,top_speed:maxS,distance:totD,temperature:parseFloat(document.getElementById('tmp').value)||0,wind:parseFloat(document.getElementById('wnd').value)||0,splits};showRes()}
+  else show('homeScreen');
 });
-
-// ── RESULT ──
-function showResult(r) {
-  const labels = { '0-100': '0 → 100 км/ч', '0-200': '0 → 200 км/ч',
-    '100-200': '100 → 200 км/ч', 'quarter_mile': '¼ мили (402 м)' };
-
-  document.getElementById('resultType').textContent = labels[r.type] || getModeLabel();
-  document.getElementById('resultTime').textContent = r.time.toFixed(2);
-
-  let html = `
-    <div class="result-row"><span class="rl">⏱ Время</span><span class="rv">${r.time.toFixed(2)} сек</span></div>
-    <div class="result-row"><span class="rl">🏎 Макс скорость</span><span class="rv">${r.top_speed.toFixed(1)} км/ч</span></div>
-    <div class="result-row"><span class="rl">📏 Дистанция</span><span class="rv">${r.distance.toFixed(0)} м</span></div>`;
-
-  if (r.splits && Object.keys(r.splits).length) {
-    for (const [sp, t] of Object.entries(r.splits)) {
-      html += `<div class="result-row"><span class="rl">Split ${sp} км/ч</span><span class="rv green">${t.toFixed(2)} с</span></div>`;
-    }
-  }
-  if (r.temperature) html += `<div class="result-row"><span class="rl">🌡 Температура</span><span class="rv">${r.temperature}°C</span></div>`;
-  if (r.wind) html += `<div class="result-row"><span class="rl">💨 Ветер</span><span class="rv">${r.wind} м/с</span></div>`;
-
-  document.getElementById('resultCard').innerHTML = html;
-  showScreen('resultScreen');
+const LB={'0-100':'0 → 100 км/ч','0-200':'0 → 200 км/ч','100-200':'100 → 200 км/ч','quarter_mile':'¼ мили · 402м'};
+function showRes(){
+  const r=result,p=mp(),l=LB[r.type]||p.l;
+  document.getElementById('rt').textContent=l;
+  document.getElementById('rb').textContent=r.time.toFixed(2);
+  let h=`<div class="rr"><span class="rrl">⏱ Время</span><span class="rrv">${r.time.toFixed(2)} с</span></div>
+<div class="rr"><span class="rrl">🏎 Макс скорость</span><span class="rrv o">${r.top_speed.toFixed(1)} км/ч</span></div>
+<div class="rr"><span class="rrl">📏 Дистанция</span><span class="rrv">${r.distance.toFixed(0)} м</span></div>`;
+  if(r.splits)for(const[sp,t]of Object.entries(r.splits))h+=`<div class="rr"><span class="rrl">Split ${sp}км/ч</span><span class="rrv g">${t.toFixed(2)} с</span></div>`;
+  if(r.temperature)h+=`<div class="rr"><span class="rrl">🌡 Температура</span><span class="rrv">${r.temperature}°C</span></div>`;
+  if(r.wind)h+=`<div class="rr"><span class="rrl">💨 Ветер</span><span class="rrv">${r.wind} м/с</span></div>`;
+  document.getElementById('rc').innerHTML=h;show('resScreen');
 }
-
-document.getElementById('saveBtn').addEventListener('click', () => {
-  if (!measureResult) return;
-  const data = {
-    type: measureResult.type,
-    time: measureResult.time,
-    top_speed: measureResult.top_speed,
-    distance: measureResult.distance,
-    temperature: measureResult.temperature,
-    wind: measureResult.wind
-  };
-  if (tg) {
-    tg.sendData(JSON.stringify(data));
-  } else {
-    alert('Результат: ' + JSON.stringify(data, null, 2));
-  }
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  if(!result)return;
+  const d={type:result.type,time:result.time,top_speed:result.top_speed,distance:result.distance,temperature:result.temperature,wind:result.wind};
+  if(tg)tg.sendData(JSON.stringify(d));else alert(`${result.time.toFixed(2)} сек сохранено!`);
 });
-
-document.getElementById('retryBtn').addEventListener('click', () => {
-  showScreen('homeScreen');
-  startGPS();
-});
-
-document.getElementById('homeBtn').addEventListener('click', () => {
-  showScreen('homeScreen');
-  startGPS();
-});
+document.getElementById('retryBtn').addEventListener('click',()=>{show('homeScreen');initGPS()});
+document.getElementById('homeBtn').addEventListener('click',()=>{show('homeScreen');initGPS()});
 </script>
 </body>
 </html>
